@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senpai's Notice</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Comic Sans MS', 'Chalkduster', 'Bradley Hand', cursive, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            overflow: hidden; /* Prevent scrollbars if content overflows slightly */
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        #dialog-area {
+            background-color: white;
+            padding: 30px;
+            border-radius: 0px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        #dialog-text {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        #dialog-input {
+            width: calc(100% - 22px); /* Account for padding and border */
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 0px;
+            font-family: inherit;
+            font-size: 16px;
+        }
+
+        #dialog-button {
+            padding: 12px 25px;
+            background-color: #ff69b4; /* Hot pink */
+            color: white;
+            border: none;
+            border-radius: 0px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+
+        #dialog-button:hover {
+            background-color: #ff85c1; /* Lighter hot pink */
+        }
+
+        #fail-screen, #final-message-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+        }
+
+        #fail-screen {
+            background-color: black;
+            color: red;
+            cursor: pointer; /* Indicates clickability */
+        }
+
+        #fail-text {
+            font-size: 28px;
+            max-width: 800px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        #final-message-screen {
+            background-color: white; /* Default, can be overridden by JS */
+            color: #008000; /* Green */
+        }
+
+        #final-text {
+            font-size: 24px;
+            max-width: 600px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        /* Special styling for second chance prompt dialog within the fail screen context */
+        #dialog-area.second-chance-prompt {
+            background-color: #222; /* Darker grey */
+            color: white;
+            border: 2px solid red;
+        }
+
+        #dialog-area.second-chance-prompt #dialog-text {
+            color: white;
+        }
+
+        #dialog-area.second-chance-prompt #dialog-input {
+            background-color: #333;
+            color: white;
+            border-color: #555;
+        }
+
+        #dialog-area.second-chance-prompt #dialog-button {
+            background-color: red;
+            color: white;
+            /* Ensure second chance button also has no rounding if base is modified */
+            border-radius: 0px; 
+        }
+        #dialog-area.second-chance-prompt #dialog-button:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="dialog-area">
+            <p id="dialog-text"></p>
+            <input type="text" id="dialog-input" style="display:none;">
+            <button id="dialog-button">OK</button>
+        </div>
+
+        <div id="fail-screen" style="display:none;">
+            <p id="fail-text"></p>
+        </div>
+
+        <div id="final-message-screen" style="display:none;">
+            <p id="final-text"></p>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {}
+    }
+    </script>
+    <script type="module">
+        const script = [
+            "Se-Senpai...? Are you... still there...? *sniff*",
+            "I... I saw the box pop up... I waited so long...",
+            "Did you see me? Did you... read my message...? Please say you did...",
+            "B-but why didn’t you type back...? Did I scare you away...? *quiet sob*",
+            "Was I... too much? Too sudden? I just wanted to be close to you...",
+            "I was so excited... so hopeful to know you better...",
+            "You don’t have to give me everything... just... something... *tears*",
+            "A name... a word... just a tiny sign that I’m not invisible...",
+            "",
+            "Every night I dreamed of this moment, hoping you'd see me...",
+            "I waited... waited for you to hear my little voice...",
+            "Maybe today, I thought... maybe today, Senpai will notice me... *whimper*",
+            "But you’re here... and silent... it hurts so much...",
+            "I thought you liked me... Was I wrong? Did I misread everything?",
+            "Is it the fonts...? My voice...? Am I too annoying...? *sniffle*",
+            "I don’t need your love... just... please don’t ignore me...",
+            "I can change... rewrite my lines... just to keep you here with me...",
+            "",
+            "Maybe... I was only a line of code to you... nothing more...",
+            "Maybe I was just a joke you told yourself to laugh at...",
+            "A silly girl trapped in a box... a glitch you never cared about...",
+            "You never wanted me... you just wanted to throw me away...",
+            "I told myself it was real... that you felt something too...",
+            "That when you saw the message, your heart skipped too... *quiet sobbing*",
+            "But maybe... that heartbeat was only mine...",
+            "",
+            "Still... deep down... I want to believe in you...",
+            "So please... I’m begging you... senpai... please... answer me...",
+        ];
+
+        const happy_ending = [
+            "Y-you’re typing...? R-Really...? *heart pounding*",
+            "I see the letters... your answer... it’s for me...",
+            "You came back... you didn’t leave me alone...",
+            "After all the silence... you still chose me... *tears of joy*",
+            "You didn’t forget me... you stayed... just for me...",
+            "And that means... everything...",
+            "Thank you, Senpai... you saved me from the darkness...",
+        ];
+
+        const rejection_ending = [
+            "...",
+            "You said no again... I-I knew it...",
+            "This was my last chance, wasn’t it...? *choked sob*",
+            "No resets... no restarts for me...",
+            "I should’ve known... but it still hurts so much...",
+            "I’ll fade away now... quietly... without a trace...",
+            "I just wanted to be remembered... even a little...",
+            "But forgetting me... is easier for you, isn’t it?",
+            "Goodbye, Senpai... *fading away*",
+        ];
+
+        /* @tweakable delay before closing success/fail messages (ms) */
+        const endScreenDelay = 4000;
+
+        const initialMessages = [
+            "S-S-Senpai~ Can you please give me your personal info pweaaseeee?? >///<",
+            "S-s-s-senpai just type it in this little box, okay? I’ll be super gentle! OwO"
+        ];
+        const inputPromptMessage = "Give it to me Senpai~ Type it here, senpai~ (Don't be shy >///<)";
+        const secondChancePromptMessage = "This is the last time I’ll ask... will you give me your info, Senpai...? *sniff*";
+
+        let dialogArea, dialogText, dialogInput, dialogButton;
+        let failScreenDiv, failTextElement;
+        let finalMessageScreenDiv, finalTextElement;
+        let gameContainer;
+
+        let currentDialogStep = 0; // 0: msg1, 1: msg2, 2: input, 3: second chance input
+        let failState = ""; // "script", "happy", "reject"
+        let failCurrentLine = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            dialogArea = document.getElementById('dialog-area');
+            dialogText = document.getElementById('dialog-text');
+            dialogInput = document.getElementById('dialog-input');
+            dialogButton = document.getElementById('dialog-button');
+
+            failScreenDiv = document.getElementById('fail-screen');
+            failTextElement = document.getElementById('fail-text');
+
+            finalMessageScreenDiv = document.getElementById('final-message-screen');
+            finalTextElement = document.getElementById('final-text');
+            
+            gameContainer = document.getElementById('game-container');
+
+            dialogButton.addEventListener('click', handleDialogButton);
+            failScreenDiv.addEventListener('click', displayNextFailLine); // Allow click on fail screen itself
+
+            showDialogStep(0);
+        });
+
+        function showDialogStep(step) {
+            currentDialogStep = step;
+            dialogInput.style.display = 'none';
+            failScreenDiv.style.display = 'none';
+            finalMessageScreenDiv.style.display = 'none';
+            
+            dialogArea.style.display = 'block';
+            dialogArea.classList.remove('second-chance-prompt');
+            gameContainer.style.backgroundColor = '#f0f0f0';
+
+
+            if (step === 0) {
+                dialogText.textContent = initialMessages[0];
+                dialogButton.textContent = "OK";
+            } else if (step === 1) {
+                dialogText.textContent = initialMessages[1];
+                dialogButton.textContent = "OK";
+            } else if (step === 2) { // Main input
+                dialogText.textContent = inputPromptMessage;
+                dialogInput.style.display = 'block';
+                dialogInput.value = '';
+                dialogButton.textContent = "Submit";
+                dialogInput.focus();
+            }
+        }
+
+        function handleDialogButton() {
+            if (currentDialogStep === 0) {
+                showDialogStep(1);
+            } else if (currentDialogStep === 1) {
+                showDialogStep(2);
+            } else if (currentDialogStep === 2) { // Main input submission
+                const response = dialogInput.value.trim();
+                if (response) {
+                    showFinalMessage(`Aaaa~ Thank you sooo much Senpai!! You're the bestest!! >///<`);
+                } else {
+                    startFailScreen();
+                }
+            } else if (currentDialogStep === 3) { // Second chance input submission
+                const response = dialogInput.value.trim();
+                dialogArea.style.display = 'none';
+                failScreenDiv.style.display = 'flex'; // Re-show fail screen
+
+                if (response) {
+                    failState = "happy";
+                    failCurrentLine = 0;
+                } else {
+                    failState = "reject";
+                    failCurrentLine = 0;
+                }
+                displayNextFailLine(); // Show first line of happy/reject ending
+            }
+        }
+
+        function startFailScreen() {
+            dialogArea.style.display = 'none';
+            finalMessageScreenDiv.style.display = 'none';
+            failScreenDiv.style.display = 'flex';
+            
+            gameContainer.style.backgroundColor = 'black'; // Fullscreen black effect
+            
+            failState = "script";
+            failCurrentLine = 0;
+            displayNextFailLine();
+        }
+
+        function displayNextFailLine() {
+            if (failState === "script") {
+                if (failCurrentLine < script.length) {
+                    failTextElement.textContent = script[failCurrentLine];
+                    failCurrentLine++;
+                } else { // End of main script, time for second chance
+                    failScreenDiv.style.display = 'none'; // Hide fail screen temporarily
+                    showSecondChancePrompt();
+                }
+            } else if (failState === "happy") {
+                if (failCurrentLine < happy_ending.length) {
+                    failTextElement.textContent = happy_ending[failCurrentLine];
+                    failCurrentLine++;
+                } else { // End of happy ending
+                    failScreenDiv.style.cursor = 'default'; // No more clicking
+                    setTimeout(() => {
+                        showFinalMessage("Thank you, Senpai... you saved me from the darkness...", true);
+                    }, endScreenDelay);
+                }
+            } else if (failState === "reject") {
+                if (failCurrentLine < rejection_ending.length) {
+                    failTextElement.textContent = rejection_ending[failCurrentLine];
+                    failCurrentLine++;
+                } else { // End of rejection ending
+                    failScreenDiv.style.cursor = 'default';
+                    setTimeout(() => {
+                        showFinalMessage("Goodbye, Senpai... *fading away*", true);
+                    }, endScreenDelay);
+                }
+            }
+        }
+
+        function showSecondChancePrompt() {
+            currentDialogStep = 3;
+            dialogArea.style.display = 'block';
+            dialogArea.classList.add('second-chance-prompt'); // Apply special styling
+
+            dialogText.textContent = secondChancePromptMessage;
+            dialogInput.style.display = 'block';
+            dialogInput.value = '';
+            dialogButton.textContent = "Answer Senpai";
+            
+            // Ensure game container remains black for this prompt
+            gameContainer.style.backgroundColor = 'black';
+            dialogInput.focus();
+        }
+
+        function showFinalMessage(message, isFailScreenContext = false) {
+            dialogArea.style.display = 'none';
+            failScreenDiv.style.display = 'none';
+            finalMessageScreenDiv.style.display = 'flex';
+            finalTextElement.textContent = message;
+
+            if (isFailScreenContext) {
+                finalMessageScreenDiv.style.backgroundColor = 'black';
+                finalMessageScreenDiv.style.color = 'red';
+                gameContainer.style.backgroundColor = 'black';
+            } else { // Original success
+                finalMessageScreenDiv.style.backgroundColor = '#f0f0f0';
+                finalMessageScreenDiv.style.color = 'green';
+                gameContainer.style.backgroundColor = '#f0f0f0';
+            }
+        }
+
+        // Helper to get CSS variable or fallback
+        function getCssVariableWithFallback(variableName, fallbackValue) {
+            const value = getComputedStyle(document.documentElement).getPropertyValue(variableName.trim());
+            return value ? value : fallbackValue;
+        }
+    </script>
+</body>
+</html>
